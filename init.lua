@@ -10,7 +10,16 @@ vim.opt.rtp:prepend(lazypath)
 
 -- 3. Plugins
 require("lazy").setup({
+  -- nvim-lspconfig is still needed to provide the server definitions/recipes
   { "neovim/nvim-lspconfig" },
+  
+  -- Git integration
+  {
+    "tpope/vim-fugitive",
+    config = function()
+      vim.keymap.set('n', '<leader>gs', ':Git<CR>', { desc = "Git Status" })
+    end
+  },
   
   -- Cyberdream Theme Setup
   {
@@ -25,7 +34,7 @@ require("lazy").setup({
         borderless_pickers = true,
         terminal_colors = true,
       })
-      vim.cmd("colorscheme cyberdream") -- Set the theme here
+      vim.cmd("colorscheme cyberdream")
     end,
   },
 
@@ -39,7 +48,7 @@ require("lazy").setup({
       local builtin = require('telescope.builtin')
       vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
       vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
-      vim.keymap.set('n', '<leader>fz', builtin.current_buffer_fuzzy_find, {}) -- ADDED: Text search current file and jump
+      vim.keymap.set('n', '<leader>fz', builtin.current_buffer_fuzzy_find, {})
     end
   }, 
   
@@ -87,11 +96,19 @@ require("nvim-tree").setup()
 require("nvim-autopairs").setup{}
 
 -- LSP Setup
-local lspconfig = require('lspconfig')
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-lspconfig.clangd.setup({ capabilities = capabilities })
-lspconfig.pyright.setup({ capabilities = capabilities }) 
+vim.lsp.config('clangd', {
+  cmd = { 'clangd' },
+  capabilities = capabilities,
+})
+
+vim.lsp.config('pyright', {
+  cmd = { 'pyright' },
+  capabilities = capabilities,
+})
+
+vim.lsp.enable('clangd', 'pyright')
 
 -- Treesitter
 local status, ts = pcall(require, "nvim-treesitter.configs")
@@ -114,13 +131,22 @@ vim.keymap.set('n', '<leader>r', function()
     local ext = vim.fn.expand("%:e")
 
     if ext == "py" then
-        vim.cmd("!python3 " .. vim.fn.shellescape(file))
+        vim.cmd("!python3 " .. file)
     elseif ext == "cpp" then
-        vim.cmd("!clang++ " .. vim.fn.shellescape(file) .. " -o out && ./out")
+        local cmd = "clang++ " .. file .. " -o out && ./out"
+        vim.cmd("split")
+        vim.cmd("terminal " .. cmd)
+        vim.cmd("startinsert")
+    elseif ext == "c" then
+        local cmd = "gcc " .. file .. " -o out && ./out"
+        vim.cmd("split")
+        vim.cmd("terminal " .. cmd)
+        vim.cmd("startinsert")
     else
         print("No runner for ." .. ext)
     end
 end, { desc = "Run script" })
 
 -- Quick exit from Insert Mode
-vim.keymap.set('i', 'jk', '<Esc>', { desc = "Exit insert mode" }) -- FIXED: Cleaned up trailing text
+vim.keymap.set('i', 'jk', '<Esc>', { desc = "Exit insert mode" })
+vim.opt.clipboard = "unnamedplus"
