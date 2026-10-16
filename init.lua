@@ -39,16 +39,29 @@ require("lazy").setup({
   },
 
   { "nvim-lualine/lualine.nvim" },
-  
+
+  -- Shows a popup of available keymaps after pressing a prefix (e.g. <leader>)
+  {
+    "folke/which-key.nvim",
+    event = "VeryLazy",
+    opts = {
+      delay = 200,
+      spec = {
+        { "<leader>f", group = "Find" },
+        { "<leader>g", group = "Git" },
+      },
+    },
+  },
+
   -- Telescope (Fuzzy Finder)
   {
     'nvim-telescope/telescope.nvim',
     dependencies = { 'nvim-lua/plenary.nvim' },
     config = function()
       local builtin = require('telescope.builtin')
-      vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
-      vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
-      vim.keymap.set('n', '<leader>fz', builtin.current_buffer_fuzzy_find, {})
+      vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = "Find files" })
+      vim.keymap.set('n', '<leader>fg', builtin.live_grep, { desc = "Live grep" })
+      vim.keymap.set('n', '<leader>fz', builtin.current_buffer_fuzzy_find, { desc = "Fuzzy find in buffer" })
     end
   }, 
   
@@ -56,6 +69,17 @@ require("lazy").setup({
   { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
   { "windwp/nvim-autopairs", event = "InsertEnter", config = true },
   
+  -- Auto-popup of the function signature (parameters) while typing a call, e.g. print(
+  {
+    "ray-x/lsp_signature.nvim",
+    event = "InsertEnter",
+    opts = {
+      hint_enable = false, -- no inline virtual-text hint, only the popup
+      bind = true,
+      handler_opts = { border = "rounded" },
+    },
+  },
+
   -- Completion Engine
   {
     "hrsh7th/nvim-cmp",
@@ -103,12 +127,12 @@ vim.lsp.config('clangd', {
   capabilities = capabilities,
 })
 
+-- no cmd override: nvim-lspconfig's default runs `pyright-langserver --stdio`
 vim.lsp.config('pyright', {
-  cmd = { 'pyright' },
   capabilities = capabilities,
 })
 
-vim.lsp.enable('clangd', 'pyright')
+vim.lsp.enable({ 'clangd', 'pyright' })
 
 -- Treesitter
 local status, ts = pcall(require, "nvim-treesitter.configs")
@@ -121,9 +145,9 @@ end
 
 -- 6. KEYBINDINGS
 -- Sidebar & Documentation
-vim.keymap.set('n', '<leader>e', ':NvimTreeToggle<CR>') 
-vim.keymap.set('n', '<leader>k', vim.lsp.buf.hover)
-vim.keymap.set('i', '<C-k>', vim.lsp.buf.signature_help)
+vim.keymap.set('n', '<leader>e', ':NvimTreeToggle<CR>', { desc = "Toggle file tree" })
+vim.keymap.set('n', '<leader>k', vim.lsp.buf.hover, { desc = "Hover docs" })
+vim.keymap.set('i', '<C-k>', vim.lsp.buf.signature_help, { desc = "Signature help" })
 
 -- Space + r: SMART RUN
 vim.keymap.set('n', '<leader>r', function()
