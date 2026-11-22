@@ -1,6 +1,13 @@
 -- 1. SET LEADER FIRST
 vim.g.mapleader = " "
 
+-- No plugin here uses the Python/Node/Ruby/Perl remote-plugin hosts. Left on,
+-- the first Python buffer spends ~200 ms probing for pynvim.
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_node_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
+
 -- 2. Setup lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then
