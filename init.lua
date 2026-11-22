@@ -3,7 +3,7 @@ vim.g.mapleader = " "
 
 -- 2. Setup lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   vim.fn.system({ "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath })
 end
 vim.opt.rtp:prepend(lazypath)
@@ -66,7 +66,9 @@ require("lazy").setup({
   }, 
   
   { "nvim-tree/nvim-tree.lua", dependencies = "nvim-tree/nvim-web-devicons" },
-  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
+  -- Pinned to master: the main branch is a rewrite that needs Neovim 0.12 and
+  -- drops the nvim-treesitter.configs module used below.
+  { "nvim-treesitter/nvim-treesitter", branch = "master", lazy = false, build = ":TSUpdate" },
   { "windwp/nvim-autopairs", event = "InsertEnter", config = true },
   
   -- Auto-popup of the function signature (parameters) while typing a call, e.g. print(
@@ -105,6 +107,8 @@ require("lazy").setup({
       })
     end
   },
+}, {
+  rocks = { enabled = false }, -- no plugin here needs luarocks
 })
 
 -- 4. General Settings
@@ -117,7 +121,6 @@ require('lualine').setup({
   options = { theme = 'auto' }
 })
 require("nvim-tree").setup()
-require("nvim-autopairs").setup{}
 
 -- LSP Setup
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
@@ -135,13 +138,10 @@ vim.lsp.config('pyright', {
 vim.lsp.enable({ 'clangd', 'pyright' })
 
 -- Treesitter
-local status, ts = pcall(require, "nvim-treesitter.configs")
-if status then
-    ts.setup {
-      ensure_installed = { "cpp", "lua", "vim", "vimdoc", "python" },
-      highlight = { enable = true },
-    }
-end
+require("nvim-treesitter.configs").setup({
+  ensure_installed = { "c", "cpp", "lua", "vim", "vimdoc", "python" },
+  highlight = { enable = true },
+})
 
 -- 6. KEYBINDINGS
 -- Sidebar & Documentation
@@ -151,8 +151,9 @@ vim.keymap.set('i', '<C-k>', vim.lsp.buf.signature_help, { desc = "Signature hel
 
 -- Space + r: SMART RUN
 vim.keymap.set('n', '<leader>r', function()
-    local file = vim.fn.expand("%")
+    local file = vim.fn.shellescape(vim.fn.expand("%"))
     local ext = vim.fn.expand("%:e")
+    vim.cmd("silent! write") -- run what is on screen, not the last save
 
     if ext == "py" then
         vim.cmd("!python3 " .. file)
